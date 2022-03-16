@@ -20,7 +20,7 @@ public class Message implements Serializable {
     private String messageId;
 
     /**
-     * 消息的主题
+     * 消息的主题，此处就是exchange
      * 默认exchange的type规定为topic
      */
     private String topic;
