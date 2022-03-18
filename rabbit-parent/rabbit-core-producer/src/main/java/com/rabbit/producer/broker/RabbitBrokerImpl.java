@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 真正发消息的类
@@ -28,6 +29,7 @@ public class RabbitBrokerImpl implements RabbitBroker {
 
     /**
      * 迅速发消息
+     *
      * @param message
      */
     @Override
@@ -62,6 +64,7 @@ public class RabbitBrokerImpl implements RabbitBroker {
 
     /**
      * 通过对数据入库，和定时任务兜底来保障可靠性
+     *
      * @param message
      */
     @Override
@@ -86,6 +89,17 @@ public class RabbitBrokerImpl implements RabbitBroker {
 
     @Override
     public void sendMessages() {
-
+        List<Message> messages = MessageHolder.clear();
+        messages.forEach(message -> {
+            MessageHolderAsyncQueue.submit(() -> {
+                CorrelationData correlationData =
+                        new CorrelationData(String.format("%s#%s#%s", message.getMessageId()
+                                , System.currentTimeMillis(), message.getMessageType()));
+                String topic = message.getTopic();
+                String routingKey = message.getRoutingKey();
+                rabbitTemplateContainer.getTemplate(message).convertAndSend(topic, routingKey, message, correlationData);
+                log.info("#RabbitBrokerImpl.sendMessages# send to rabbitmq, messageId:{}", message.getMessageId());
+            });
+        });
     }
 }

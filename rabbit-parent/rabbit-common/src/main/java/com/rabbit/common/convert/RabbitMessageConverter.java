@@ -16,7 +16,6 @@ public class RabbitMessageConverter implements MessageConverter {
 
     private GenericMessageConverter delegate;
 
-//	private final String delaultExprie = String.valueOf(24 * 60 * 60 * 1000);
 
     public RabbitMessageConverter(GenericMessageConverter genericMessageConverter) {
         Preconditions.checkNotNull(genericMessageConverter);
@@ -25,7 +24,6 @@ public class RabbitMessageConverter implements MessageConverter {
 
     @Override
     public Message toMessage(Object object, MessageProperties messageProperties) throws MessageConversionException {
-//		messageProperties.setExpiration(delaultExprie);
         com.rabbit.api.Message message = (com.rabbit.api.Message) object;
         messageProperties.setDelay(message.getDelayMills());
         return this.delegate.toMessage(object, messageProperties);

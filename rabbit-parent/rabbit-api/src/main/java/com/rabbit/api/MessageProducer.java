@@ -22,7 +22,7 @@ public interface MessageProducer {
     void send(Message message, SendCallback sendCallback) throws MessageRunTimeException;
 
     /**
-     * 消息的批量发送
+     * 消息的批量发送(迅速消息)
      * @param messsage
      * @throws MessageRunTimeException
      */
