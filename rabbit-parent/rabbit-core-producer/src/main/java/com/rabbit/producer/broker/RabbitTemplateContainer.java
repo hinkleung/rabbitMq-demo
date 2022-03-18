@@ -76,9 +76,13 @@ public class RabbitTemplateContainer implements RabbitTemplate.ConfirmCallback {
         List<String> strings = splitter.splitToList(correlationData.getId());
         String messageId = strings.get(0);
         long sendTime = Long.parseLong(strings.get(1));
+        String messageType = strings.get(2);
         if (ack) {
             log.info("send message is OK, confirm messageId: {}, sendTime: {}", messageId, sendTime);
-            messageStoreService.success(messageId);
+            // 如果当前消息类型为reliant 我们就去数据库进行更新
+            if (MessageType.RELIANT.equals(messageType)) {
+                messageStoreService.success(messageId);
+            }
         } else {
             log.error("send message is FAIL, confirm messageId: {}, sendTime: {}", messageId, sendTime);
         }

@@ -45,13 +45,13 @@ public class RabbitBrokerImpl implements RabbitBroker {
     private void sendKernel(Message message) {
         AsyncQueue.submit(() -> {
             CorrelationData correlationData =
-                    new CorrelationData(String.format("%s#%s", message.getMessageId(), System.currentTimeMillis()));
+                    new CorrelationData(String.format("%s#%s#%s", message.getMessageId()
+                            , System.currentTimeMillis(), message.getMessageType()));
             String topic = message.getTopic();
             String routingKey = message.getRoutingKey();
             rabbitTemplateContainer.getTemplate(message).convertAndSend(topic, routingKey, message, correlationData);
             log.info("#RabbitBrokerImpl.sendKernel# send to rabbitmq, messageId:{}", message.getMessageId());
         });
-
     }
 
     @Override
@@ -67,17 +67,19 @@ public class RabbitBrokerImpl implements RabbitBroker {
     @Override
     public void reliantSend(Message message) {
         message.setMessageType(MessageType.RELIANT);
-        Date now = new Date();
-        // 1. 把消息落库
-        BrokerMessage brokerMessage = new BrokerMessage();
-        brokerMessage.setMessageId(message.getMessageId());
-        brokerMessage.setStatus(BrokerMessageStatus.SENDING.getCode());
-        brokerMessage.setNextRetry(DateUtils.addMinutes(now, BrokerMessageConst.TIMEOUT));
-        brokerMessage.setCreateTime(now);
-        brokerMessage.setUpdateTime(now);
-        brokerMessage.setMessage(message);
-        messageStoreService.insert(brokerMessage);
-
+        BrokerMessage bm = messageStoreService.selectByMessageId(message.getMessageId());
+        if (bm == null) {
+            Date now = new Date();
+            // 1. 把消息落库
+            BrokerMessage brokerMessage = new BrokerMessage();
+            brokerMessage.setMessageId(message.getMessageId());
+            brokerMessage.setStatus(BrokerMessageStatus.SENDING.getCode());
+            brokerMessage.setNextRetry(DateUtils.addMinutes(now, BrokerMessageConst.TIMEOUT));
+            brokerMessage.setCreateTime(now);
+            brokerMessage.setUpdateTime(now);
+            brokerMessage.setMessage(message);
+            messageStoreService.insert(brokerMessage);
+        }
         // 发消息
         sendKernel(message);
     }
